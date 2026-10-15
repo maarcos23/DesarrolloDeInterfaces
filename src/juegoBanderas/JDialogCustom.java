@@ -2,6 +2,8 @@ package juegoBanderas;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JDialog;
@@ -36,7 +38,29 @@ public class JDialogCustom extends JDialog{
 			pnlOp.add(radioButtons[i]);
 			
 		}
+		if(radioButtons.length> 0) {
+			radioButtons[0].setSelected(true);
+		}
+		
+		BotonCustom btnAceptar = new BotonCustom("Aceptar");
+		btnAceptar.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (radioButtons[respuesta].isSelected()) {
+					acertado=true;
+				}else {
+					acertado=false;
+				}
+				dispose();
+			} 
+	});
 	
+		JPanel pnlBoton = new JPanel();
+		pnlBoton.add(btnAceptar);
 	}
-	
+	public boolean isAcertado() {
+		return acertado;
+	}
 }
