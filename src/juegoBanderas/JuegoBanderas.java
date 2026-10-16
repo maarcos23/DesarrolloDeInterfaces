@@ -21,11 +21,11 @@ public class JuegoBanderas extends JFrame {
 
 	public JuegoBanderas() {
 		setTitle("Juego de Banderas");
-		setSize(650, 550);
+		setSize(650, 700);
 		setLocationRelativeTo(null);
 		setLayout(new BorderLayout(15, 15));
 
-		// 1. EXTRA: Confirmación al intentar salir cerrando con la "X"
+		// 1. EXTRA: Confirmación al intentar salir con la "X"
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -43,32 +43,46 @@ public class JuegoBanderas extends JFrame {
 			}
 		});
 
-		// 2. EXTRA: Marcador personalizado en la parte superior
+		// 2. EXTRA: Marcador personalizado en la parte superior (NORTH)
 		lblMarcador = new MarcadorCustom("Puntuación: " + puntuacion + " pts");
 		add(lblMarcador, BorderLayout.NORTH);
 
-		// 3. Panel central con las 3 filas de banderas
-		JPanel panelCentral = new JPanel(new GridLayout(3, 1, 10, 10));
+		// 3. Panel central con las 5 filas de banderas
+		JPanel panelCentral = new JPanel(new GridLayout(5, 1, 10, 10));
 
-		// Fila 1: España (índice 0 es España)
+		// Fila 1: España (índice 0)
 		panelCentral.add(crearFila(
-			"Lib/España.jpg",
+			"Lib/banderaEspaña.jpg",
 			new String[] { "España", "México", "Colombia" },
 			0
 		));
 
-		// Fila 2: Brasil (índice 1 es Brasil)
+		// Fila 2: Brasil (índice 1)
 		panelCentral.add(crearFila(
-			"Lib/brasil.png",
+			"Lib/banderaBrasil.jpg",
 			new String[] { "Argentina", "Brasil", "Portugal" },
 			1
 		));
 
-		// Fila 3: Estados Unidos (índice 2 es EE.UU.)
+		// Fila 3: Portugal (índice 2)
 		panelCentral.add(crearFila(
-			"Lib/bandera-eeuu.jpg",
-			new String[] { "Reino Unido", "Australia", "EE.UU." },
+			"Lib/banderaPortugal.jpg",
+			new String[] { "Italia", "Francia", "Portugal" },
 			2
+		));
+
+		// Fila 4: Italia (índice 0)
+		panelCentral.add(crearFila(
+			"Lib/banderaItalia.jpg",
+			new String[] { "Italia", "Irlanda", "México" },
+			0
+		));
+
+		// Fila 5: Colombia (índice 1)
+		panelCentral.add(crearFila(
+			"Lib/banderaColombia.jpg",
+			new String[] { "Ecuador", "Colombia", "Venezuela" },
+			1
 		));
 
 		add(panelCentral, BorderLayout.CENTER);
@@ -82,23 +96,23 @@ public class JuegoBanderas extends JFrame {
 	private JPanel crearFila(String rutaImagen, String[] opciones, int respuestaCorrecta) {
 		JPanel fila = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
 
-		// Cargar y escalar la imagen
+		// Cargar y escalar la imagen proporcionalmente
 		ImageIcon icono = new ImageIcon(rutaImagen);
 		Image escalada = icono.getImage().getScaledInstance(120, 75, Image.SCALE_SMOOTH);
 		JLabel lblBandera = new JLabel(new ImageIcon(escalada));
 
-		// Botón con tu clase BotonCustom
+		// Botón de la clase BotonCustom
 		BotonCustom btnAdivinar = new BotonCustom("¿Qué Bandera es?");
 
-		// Oyente de acción
+		// Oyente de acción sin lambdas
 		btnAdivinar.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// Abrimos tu diálogo customizado
+				// Abrimos el JDialog modal personalizado
 				JDialogCustom dialogo = new JDialogCustom(JuegoBanderas.this, opciones, respuestaCorrecta);
 				dialogo.setVisible(true);
 
-				// Al cerrarse el diálogo, comprobamos si acertó
+				// Al cerrarse el diálogo, consultamos si ha acertado
 				if (dialogo.isAcertado()) {
 					puntuacion += 10;
 					lblMarcador.setText("Puntuación: " + puntuacion + " pts");
@@ -110,11 +124,11 @@ public class JuegoBanderas extends JFrame {
 						JOptionPane.INFORMATION_MESSAGE
 					);
 
-					// Desactivar el botón para que no repita puntos
+					// Ampliación: deshabilitar botón para evitar sumar puntos dobles
 					btnAdivinar.setEnabled(false);
 					btnAdivinar.setText("Acertada");
 				} else {
-					// Mensaje de fallo con Aspa Roja (ERROR_MESSAGE)
+					// Mensaje de fallo con el aspa roja de Swing (ERROR_MESSAGE)
 					JOptionPane.showMessageDialog(
 						JuegoBanderas.this,
 						"Has Fallado",
