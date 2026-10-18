@@ -6,7 +6,7 @@ public class Tarea {
 	private String prioridad;
 	private boolean estado;
 	
-	public Tarea() {
+	public Tarea(String nombre, String prioridad) {
 		// TODO Auto-generated constructor stub
 		this.nombre = nombre;
 		this.prioridad = prioridad;

@@ -54,8 +54,10 @@ public class TaskCellTRenderer extends JPanel implements ListCellRenderer<Tarea>
 				setBackground(list.getBackground());
 			
 			if(value.isEstado()) {
+				setBackground(new Color(230, 230, 230));
 				lblTexto.setForeground(Color.GRAY);
 			}else {
+				setBackground(list.getBackground());
 				lblTexto.setForeground(Color.BLACK);
 			}
 		}
