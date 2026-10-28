@@ -7,9 +7,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -18,6 +27,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -31,78 +41,75 @@ public class NotasApp extends JFrame {
     private DefaultListModel<String> modeloNotas;
     private JList<String> listaNotas;
     private JTextArea areaTexto;
-    
-    // Diccionario para guardar el texto de cada nota en la memoria RAM
-    private HashMap<String, String> memoriaNotas = new HashMap<>();
-    
-    // Gestor de Deshacer
+    private HashMap<String, String> contenidoNotas = new HashMap<>();
+    private final File carpetaNotas = new File("mis_notas_guardadas");
     private UndoManager gestorDeshacer = new UndoManager();
 
     public NotasApp() {
-        setTitle("Bloc de Notas Swing");
-        setSize(700, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Gestor Interactivo de Notas");
+        setSize(800, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int resp = JOptionPane.showConfirmDialog(NotasApp.this, "¿Estás seguro de que quieres salir?", "Salir", JOptionPane.YES_NO_OPTION);
+                if (resp == JOptionPane.YES_OPTION) {
+                    System.exit(0);
+                }
+            }
+        });
+
+        if (!carpetaNotas.exists()) carpetaNotas.mkdirs();
 
         // 1. ÁREA DE TEXTO (Centro)
         areaTexto = new JTextArea();
         areaTexto.setLineWrap(true);
-        // Conectar el deshacer al área de texto
-        areaTexto.getDocument().addUndoableEditListener(gestorDeshacer);
-        JScrollPane scrollCentro = new JScrollPane(areaTexto);
-        add(scrollCentro, BorderLayout.CENTER);
+        areaTexto.setWrapStyleWord(true);
+        areaTexto.getDocument().addUndoableEditListener(gestorDeshacer); 
+        JScrollPane scrollEditor = new JScrollPane(areaTexto);
 
-        // 2. LISTA DE NOTAS Y BOTONES (Izquierda)
+        // 2. LISTA LATERAL
         modeloNotas = new DefaultListModel<>();
         listaNotas = new JList<>(modeloNotas);
-        
-        // Evento: Al hacer clic en una nota de la lista, mostrar su texto
         listaNotas.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()) { // Para evitar que se dispare dos veces
+                if (!e.getValueIsAdjusting()) {
                     String seleccion = listaNotas.getSelectedValue();
                     if (seleccion != null) {
-                        areaTexto.setText(memoriaNotas.get(seleccion));
-                        gestorDeshacer.discardAllEdits(); // Limpia el historial al cambiar de nota
+                        areaTexto.setText(contenidoNotas.get(seleccion));
+                        gestorDeshacer.discardAllEdits(); 
                     }
                 }
             }
         });
 
-        JScrollPane scrollIzquierda = new JScrollPane(listaNotas);
-        scrollIzquierda.setPreferredSize(new Dimension(200, 0));
+        JScrollPane scrollLista = new JScrollPane(listaNotas);
+        scrollLista.setPreferredSize(new Dimension(200, 400));
 
         JPanel panelIzquierdo = new JPanel(new BorderLayout());
-        panelIzquierdo.add(scrollIzquierda, BorderLayout.CENTER);
+        panelIzquierdo.add(scrollLista, BorderLayout.CENTER);
 
-        // Botones debajo de la lista
         JPanel pnlBotonesLista = new JPanel(new FlowLayout());
         JButton btnNueva = new JButton("Nueva");
         JButton btnGuardar = new JButton("Guardar");
-        
+        btnNueva.setMnemonic(KeyEvent.VK_N); 
+        btnGuardar.setMnemonic(KeyEvent.VK_G); 
+
         btnNueva.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String titulo = JOptionPane.showInputDialog("Título de la nueva nota:");
-                if (titulo != null && !titulo.isEmpty()) {
-                    modeloNotas.addElement(titulo); // La añade a la vista
-                    memoriaNotas.put(titulo, "");   // Le crea un hueco vacío en memoria
-                    listaNotas.setSelectedValue(titulo, true); // La selecciona
-                    areaTexto.setText("");
-                }
+                crearNota();
             }
         });
 
         btnGuardar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String seleccion = listaNotas.getSelectedValue();
-                if (seleccion != null) {
-                    memoriaNotas.put(seleccion, areaTexto.getText()); // Actualiza el texto en memoria
-                    JOptionPane.showMessageDialog(NotasApp.this, "Nota guardada");
-                }
+                actualizarNota();
             }
         });
 
@@ -110,68 +117,130 @@ public class NotasApp extends JFrame {
         pnlBotonesLista.add(btnGuardar);
         panelIzquierdo.add(pnlBotonesLista, BorderLayout.SOUTH);
 
-        add(panelIzquierdo, BorderLayout.WEST);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelIzquierdo, scrollEditor);
+        add(splitPane, BorderLayout.CENTER);
 
-        // 3. BARRA DE MENÚ SUPERIOR
         crearMenu();
+        cargarNotasDisco();
     }
 
     private void crearMenu() {
-        JMenuBar barra = new JMenuBar();
+        JMenuBar mb = new JMenuBar();
 
-        // Menú Edición (Deshacer/Rehacer)
-        JMenu menuEdicion = new JMenu("Edición");
-        menuEdicion.setMnemonic(KeyEvent.VK_E); // Atajo: Alt + E
+        JMenu mArchivo = new JMenu("Archivo");
+        mArchivo.setMnemonic(KeyEvent.VK_A);
 
-        JMenuItem itemDeshacer = new JMenuItem("Deshacer");
-        // Acelerador: Ctrl + Z
-        itemDeshacer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK));
-        itemDeshacer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (gestorDeshacer.canUndo()) {
-                    gestorDeshacer.undo();
-                }
-            }
-        });
+        JMenuItem iImportar = new JMenuItem("Importar .txt");
+        iImportar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK));
+        iImportar.addActionListener(e -> usarFileChooser(true));
 
-        JMenuItem itemRehacer = new JMenuItem("Rehacer");
-        // Acelerador: Ctrl + Y
-        itemRehacer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK));
-        itemRehacer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (gestorDeshacer.canRedo()) {
-                    gestorDeshacer.redo();
-                }
-            }
-        });
+        JMenuItem iExportar = new JMenuItem("Exportar a .txt");
+        iExportar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK));
+        iExportar.addActionListener(e -> usarFileChooser(false));
 
-        menuEdicion.add(itemDeshacer);
-        menuEdicion.add(itemRehacer);
+        mArchivo.add(iImportar);
+        mArchivo.add(iExportar);
+        
+        JMenu mEdicion = new JMenu("Edición");
+        mEdicion.setMnemonic(KeyEvent.VK_E);
 
-        // Menú Apariencia (Look & Feel)
-        JMenu menuAspecto = new JMenu("Apariencia");
-        JMenuItem itemMetal = new JMenuItem("Metal");
-        JMenuItem itemWindows = new JMenuItem("Sistema");
+        JMenuItem iDeshacer = new JMenuItem("Deshacer");
+        iDeshacer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK));
+        iDeshacer.addActionListener(e -> { if (gestorDeshacer.canUndo()) gestorDeshacer.undo(); });
 
-        itemMetal.addActionListener(e -> cambiarAspecto("javax.swing.plaf.metal.MetalLookAndFeel"));
-        itemWindows.addActionListener(e -> cambiarAspecto(UIManager.getSystemLookAndFeelClassName()));
+        JMenuItem iRehacer = new JMenuItem("Rehacer");
+        iRehacer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK));
+        iRehacer.addActionListener(e -> { if (gestorDeshacer.canRedo()) gestorDeshacer.redo(); });
 
-        menuAspecto.add(itemMetal);
-        menuAspecto.add(itemWindows);
+        mEdicion.add(iDeshacer);
+        mEdicion.add(iRehacer);
 
-        barra.add(menuEdicion);
-        barra.add(menuAspecto);
-        setJMenuBar(barra);
+        JMenu mApariencia = new JMenu("Apariencia");
+        String[] temas = {"Metal", "Nimbus", "Windows (Nativo)"};
+        String[] clases = {
+            "javax.swing.plaf.metal.MetalLookAndFeel",
+            "javax.swing.plaf.nimbus.NimbusLookAndFeel",
+            UIManager.getSystemLookAndFeelClassName()
+        };
+
+        for (int i = 0; i < temas.length; i++) {
+            final String clase = clases[i];
+            JMenuItem item = new JMenuItem(temas[i]);
+            item.addActionListener(e -> {
+                try {
+                    UIManager.setLookAndFeel(clase);
+                    SwingUtilities.updateComponentTreeUI(this);
+                } catch (Exception ex) { ex.printStackTrace(); }
+            });
+            mApariencia.add(item);
+        }
+
+        mb.add(mArchivo);
+        mb.add(mEdicion);
+        mb.add(mApariencia);
+        setJMenuBar(mb);
     }
 
-    private void cambiarAspecto(String clase) {
-        try {
-            UIManager.setLookAndFeel(clase);
-            SwingUtilities.updateComponentTreeUI(this);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+    private void crearNota() {
+        String titulo = JOptionPane.showInputDialog(this, "Título de la nueva nota:");
+        if (titulo != null && !titulo.trim().isEmpty() && !contenidoNotas.containsKey(titulo)) {
+            modeloNotas.addElement(titulo);
+            contenidoNotas.put(titulo, "");
+            listaNotas.setSelectedValue(titulo, true);
+            areaTexto.setText("");
+            guardarNotasDisco();
+        }
+    }
+
+    private void actualizarNota() {
+        String sel = listaNotas.getSelectedValue();
+        if (sel != null) {
+            contenidoNotas.put(sel, areaTexto.getText());
+            guardarNotasDisco();
+            JOptionPane.showMessageDialog(this, "Nota '" + sel + "' actualizada correctamente.");
+        }
+    }
+
+    private void usarFileChooser(boolean esAbrir) {
+        JFileChooser fc = new JFileChooser();
+        if (esAbrir) {
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try (BufferedReader br = new BufferedReader(new FileReader(fc.getSelectedFile()))) {
+                    areaTexto.read(br, null);
+                } catch (IOException ex) { ex.printStackTrace(); }
+            }
+        } else {
+            if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(fc.getSelectedFile()))) {
+                    areaTexto.write(bw);
+                } catch (IOException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
+    private void guardarNotasDisco() {
+        for (String titulo : contenidoNotas.keySet()) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(carpetaNotas, titulo + ".txt")))) {
+                bw.write(contenidoNotas.get(titulo));
+            } catch (IOException e) { e.printStackTrace(); }
+        }
+    }
+
+    private void cargarNotasDisco() {
+        File[] archivos = carpetaNotas.listFiles();
+        if (archivos != null) {
+            for (File f : archivos) {
+                if (f.getName().endsWith(".txt")) {
+                    String titulo = f.getName().replace(".txt", "");
+                    try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                        StringBuilder sb = new StringBuilder();
+                        String linea;
+                        while ((linea = br.readLine()) != null) sb.append(linea).append("\n");
+                        modeloNotas.addElement(titulo);
+                        contenidoNotas.put(titulo, sb.toString());
+                    } catch (IOException e) { e.printStackTrace(); }
+                }
+            }
         }
     }
 }

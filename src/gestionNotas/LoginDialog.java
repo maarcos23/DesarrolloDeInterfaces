@@ -18,54 +18,57 @@ public class LoginDialog extends JDialog {
 
     private JTextField txtUsuario;
     private JPasswordField txtPassword;
-    private boolean autenticado = false; // Aquí guardamos si acertó
+    private boolean autenticado = false;
 
     public LoginDialog(JFrame parent) {
-        super(parent, "Iniciar Sesión", true); // true = Modal (bloquea)
-        setSize(300, 150);
+        super(parent, "Iniciar Sesión", true); 
+        setSize(320, 180);
         setLocationRelativeTo(parent);
+        setResizable(false);
         setLayout(new BorderLayout(10, 10));
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-        // Panel central para introducir datos
-        JPanel pnlCampos = new JPanel(new GridLayout(2, 2, 5, 5));
+        JPanel pnlCampos = new JPanel(new GridLayout(2, 2, 10, 10));
         txtUsuario = new JTextField();
-        txtUsuario.setToolTipText("Introduce tu usuario"); // Requisito: ToolTip
-        
+        txtUsuario.setToolTipText("Introduce tu nombre de usuario (ej: admin)"); 
+
         txtPassword = new JPasswordField();
-        txtPassword.setToolTipText("Introduce tu contraseña");
-        
+        txtPassword.setToolTipText("Introduce tu contraseña (ej: 1234)");
+
         pnlCampos.add(new JLabel("  Usuario:"));
         pnlCampos.add(txtUsuario);
         pnlCampos.add(new JLabel("  Contraseña:"));
         pnlCampos.add(txtPassword);
 
-        // Panel inferior para botones
-        JPanel pnlBotones = new JPanel(new FlowLayout());
         JButton btnEntrar = new JButton("Entrar");
-        JButton btnCancelar = new JButton("Cancelar");
-
         btnEntrar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String usr = txtUsuario.getText();
-                String pwd = String.valueOf(txtPassword.getPassword());
+                String usr = txtUsuario.getText().trim();
+                String pwd = String.valueOf(txtPassword.getPassword()); 
 
-                if (usr.equals("admin") && pwd.equals("1234")) {
+                if (usr.equals("marcos") && pwd.equals("1234")) {
                     autenticado = true;
-                    dispose(); // Cierra el diálogo si es correcto
+                    dispose(); 
                 } else {
-                    JOptionPane.showMessageDialog(LoginDialog.this, "Credenciales incorrectas", "Error", JOptionPane.ERROR_MESSAGE);
+
+                    JOptionPane.showMessageDialog(LoginDialog.this, 
+                        "Usuario o contraseña incorrectos.", 
+                        "Error de acceso", 
+                        JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
+        JButton btnCancelar = new JButton("Cancelar");
         btnCancelar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                dispose(); // Cierra sin autenticar
+                dispose();
             }
         });
 
+        JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         pnlBotones.add(btnEntrar);
         pnlBotones.add(btnCancelar);
 
