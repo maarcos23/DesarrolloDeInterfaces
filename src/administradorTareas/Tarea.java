@@ -12,6 +12,7 @@ public class Tarea {
 		this.prioridad = prioridad;
 		this.estado = false;
 	}
+	
 
 	public String getNombre() {
 		return nombre;
