@@ -20,6 +20,10 @@ public class MainApp extends JFrame{
 	}
 	public static void main(String[]args) {
 		
+	SplashScreen splah = new SplashScreen();
+	splah.iniciarCarga();
+	
+		
 	LoginDialog lg = new LoginDialog(null);
 	lg.setVisible(true);
 	
