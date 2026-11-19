@@ -70,7 +70,7 @@ public class SplashScreen extends JDialog {
             }
 
             try {
-                Thread.sleep(90); // Pausa de 30ms por cada incremento
+                Thread.sleep(50); // Pausa de 30ms por cada incremento
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
