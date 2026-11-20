@@ -3,6 +3,7 @@ package infoPoint;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -18,9 +19,9 @@ public class PanelAdmin extends JPanel {
     private List<Libro> libros;
     private List<Aviso> avisos;
 
+    private JTextField txtId;
     private JTextField txtTitulo;
     private JTextField txtAutor;
-    private JTextField txtId;
     private JTextField txtAnio;
     private JButton btnGuardarLibro;
 
@@ -33,39 +34,36 @@ public class PanelAdmin extends JPanel {
         this.libros = libros;
         this.avisos = avisos;
 
-        setLayout(new GridLayout(1, 2, 15, 15));
-        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        setLayout(new GridLayout(1, 2, 12, 12));
+        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        add(crearPanelLibro());
-        add(crearPanelAviso());
+        add(crearPanelLibros());
+        add(crearPanelAvisos());
     }
 
-    private JPanel crearPanelLibro() {
-        JPanel panel = new JPanel(new GridLayout(5, 2, 8, 8));
-        panel.setBorder(BorderFactory.createTitledBorder("Alta de Libro"));
+    private JPanel crearPanelLibros() {
+        JPanel p = new JPanel(new GridLayout(5, 2, 6, 6));
+        p.setBorder(BorderFactory.createTitledBorder("Alta de Libro"));
 
-        txtTitulo = new JTextField();
-        txtTitulo.setToolTipText("Título del libro");
-        txtAutor = new JTextField();
-        txtAutor.setToolTipText("Autor del libro");
         txtId = new JTextField();
-        txtId.setToolTipText("Identificador único del libro");
+        txtTitulo = new JTextField();
+        txtAutor = new JTextField();
         txtAnio = new JTextField();
-        txtAnio.setToolTipText("Año de publicación (numérico)");
 
         btnGuardarLibro = new JButton("Guardar Libro");
+        btnGuardarLibro.setMnemonic(KeyEvent.VK_G);
         btnGuardarLibro.setToolTipText("Guardar libro (Enter)");
 
-        panel.add(new JLabel("Título:"));
-        panel.add(txtTitulo);
-        panel.add(new JLabel("Autor:"));
-        panel.add(txtAutor);
-        panel.add(new JLabel("ID:"));
-        panel.add(txtId);
-        panel.add(new JLabel("Año (numérico):"));
-        panel.add(txtAnio);
-        panel.add(new JLabel(""));
-        panel.add(btnGuardarLibro);
+        p.add(new JLabel("ID:"));
+        p.add(txtId);
+        p.add(new JLabel("Título:"));
+        p.add(txtTitulo);
+        p.add(new JLabel("Autor:"));
+        p.add(txtAutor);
+        p.add(new JLabel("Año:"));
+        p.add(txtAnio);
+        p.add(new JLabel(""));
+        p.add(btnGuardarLibro);
 
         btnGuardarLibro.addActionListener(new ActionListener() {
             @Override
@@ -74,31 +72,29 @@ public class PanelAdmin extends JPanel {
             }
         });
 
-        return panel;
+        return p;
     }
 
-    private JPanel crearPanelAviso() {
-        JPanel panel = new JPanel(new GridLayout(4, 2, 8, 8));
-        panel.setBorder(BorderFactory.createTitledBorder("Nuevo Aviso"));
+    private JPanel crearPanelAvisos() {
+        JPanel p = new JPanel(new GridLayout(4, 2, 6, 6));
+        p.setBorder(BorderFactory.createTitledBorder("Nuevo Aviso"));
 
         txtMensaje = new JTextField();
-        txtMensaje.setToolTipText("Texto del aviso");
         txtFecha = new JTextField();
-        txtFecha.setToolTipText("Fecha del aviso");
         cbPrioridad = new JComboBox<>(new String[]{"Baja", "Media", "Alta"});
-        cbPrioridad.setToolTipText("Prioridad del aviso");
 
         btnGuardarAviso = new JButton("Guardar Aviso");
+        btnGuardarAviso.setMnemonic(KeyEvent.VK_V);
         btnGuardarAviso.setToolTipText("Publicar aviso");
 
-        panel.add(new JLabel("Mensaje:"));
-        panel.add(txtMensaje);
-        panel.add(new JLabel("Fecha:"));
-        panel.add(txtFecha);
-        panel.add(new JLabel("Prioridad:"));
-        panel.add(cbPrioridad);
-        panel.add(new JLabel(""));
-        panel.add(btnGuardarAviso);
+        p.add(new JLabel("Mensaje:"));
+        p.add(txtMensaje);
+        p.add(new JLabel("Fecha:"));
+        p.add(txtFecha);
+        p.add(new JLabel("Prioridad:"));
+        p.add(cbPrioridad);
+        p.add(new JLabel(""));
+        p.add(btnGuardarAviso);
 
         btnGuardarAviso.addActionListener(new ActionListener() {
             @Override
@@ -107,53 +103,51 @@ public class PanelAdmin extends JPanel {
             }
         });
 
-        return panel;
+        return p;
     }
 
     private void guardarLibro() {
+        String id = txtId.getText().trim();
         String titulo = txtTitulo.getText().trim();
         String autor = txtAutor.getText().trim();
-        String id = txtId.getText().trim();
-        String anioTexto = txtAnio.getText().trim();
+        String anioStr = txtAnio.getText().trim();
 
-        if (titulo.isEmpty() || autor.isEmpty() || id.isEmpty() || anioTexto.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Rellena todos los campos del libro.", "Campos incompletos", JOptionPane.WARNING_MESSAGE);
+        if (id.isEmpty() || titulo.isEmpty() || autor.isEmpty() || anioStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Rellena todos los campos del libro.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            int anio = Integer.parseInt(anioTexto);
+            int anio = Integer.parseInt(anioStr);
             libros.add(new Libro(id, titulo, autor, anio));
-            JOptionPane.showMessageDialog(this, "Libro guardado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
+            JOptionPane.showMessageDialog(this, "Libro guardado.");
+            txtId.setText("");
             txtTitulo.setText("");
             txtAutor.setText("");
-            txtId.setText("");
             txtAnio.setText("");
-            txtTitulo.requestFocus();
+            txtId.requestFocusInWindow();
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El año debe ser un número entero (ej. 2024).", "Error numérico", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El año debe ser un número entero.", "Error", JOptionPane.ERROR_MESSAGE);
             txtAnio.setText("");
-            txtAnio.requestFocus();
+            txtAnio.requestFocusInWindow();
         }
     }
 
     private void guardarAviso() {
-        String mensaje = txtMensaje.getText().trim();
+        String msg = txtMensaje.getText().trim();
         String fecha = txtFecha.getText().trim();
-        String prioridad = (String) cbPrioridad.getSelectedItem();
+        String prio = (String) cbPrioridad.getSelectedItem();
 
-        if (mensaje.isEmpty() || fecha.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Rellena el mensaje y la fecha del aviso.", "Campos incompletos", JOptionPane.WARNING_MESSAGE);
+        if (msg.isEmpty() || fecha.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Rellena mensaje y fecha.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        avisos.add(new Aviso(mensaje, fecha, prioridad));
-        JOptionPane.showMessageDialog(this, "Aviso publicado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
+        avisos.add(new Aviso(msg, fecha, prio));
+        JOptionPane.showMessageDialog(this, "Aviso guardado.");
         txtMensaje.setText("");
         txtFecha.setText("");
-        txtMensaje.requestFocus();
+        txtMensaje.requestFocusInWindow();
     }
 
     @Override

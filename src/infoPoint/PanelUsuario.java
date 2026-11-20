@@ -30,16 +30,11 @@ public class PanelUsuario extends JPanel {
 
     private List<Libro> libros;
     private List<Aviso> avisos;
-    private DefaultListModel<Libro> modeloLibros;
-    private DefaultListModel<Aviso> modeloAvisos;
+    private DefaultListModel<Libro> modLibros;
+    private DefaultListModel<Aviso> modAvisos;
 
-    private UndoManager undoManager = new UndoManager();
     private JTextArea areaTexto;
-    private JScrollPane sp;
-    private JButton btnActualizar;
-    private JButton btnDeshacer;
-    private JButton btnRehacer;
-    private JButton btnLimpiar;
+    private UndoManager undoManager = new UndoManager();
 
     public PanelUsuario(List<Libro> libros, List<Aviso> avisos) {
         this.libros = libros;
@@ -48,172 +43,128 @@ public class PanelUsuario extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnRefrescar = new JButton(iconoCirculo(new Color(0, 102, 204)));
+        btnRefrescar.setToolTipText("Actualizar libros y avisos");
+        btnRefrescar.setMnemonic(KeyEvent.VK_R);
 
-        btnActualizar = new JButton(crearIconoActualizar());
-        btnActualizar.setToolTipText("Actualizar libros y avisos");
-        btnActualizar.setMnemonic(KeyEvent.VK_A);
+        JButton btnUndo = new JButton(iconoFlecha(true));
+        btnUndo.setToolTipText("Deshacer (Ctrl+Z)");
+        btnUndo.setMnemonic(KeyEvent.VK_Z);
 
-        btnDeshacer = new JButton(crearIconoFlecha(true));
-        btnDeshacer.setToolTipText("Deshacer último cambio (Ctrl+Z)");
-        btnDeshacer.setMnemonic(KeyEvent.VK_Z);
+        JButton btnRedo = new JButton(iconoFlecha(false));
+        btnRedo.setToolTipText("Rehacer (Ctrl+Y)");
+        btnRedo.setMnemonic(KeyEvent.VK_Y);
 
-        btnRehacer = new JButton(crearIconoFlecha(false));
-        btnRehacer.setToolTipText("Rehacer cambio (Ctrl+Y)");
-        btnRehacer.setMnemonic(KeyEvent.VK_Y);
+        JPanel pnlTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        pnlTop.add(btnRefrescar);
+        pnlTop.add(btnUndo);
+        pnlTop.add(btnRedo);
+        add(pnlTop, BorderLayout.NORTH);
 
-        btnLimpiar = new JButton(crearIconoLimpiar());
-        btnLimpiar.setToolTipText("Borrar texto de comentarios");
-        btnLimpiar.setMnemonic(KeyEvent.VK_L);
+        modLibros = new DefaultListModel<>();
+        modAvisos = new DefaultListModel<>();
 
-        btnActualizar.addActionListener(new ActionListener() {
+        JPanel pnlListas = new JPanel(new GridLayout(1, 2, 10, 10));
+
+        JPanel pLib = new JPanel(new BorderLayout());
+        pLib.setBorder(BorderFactory.createTitledBorder("Libros"));
+        pLib.add(new JScrollPane(new JList<>(modLibros)), BorderLayout.CENTER);
+
+        JPanel pAvi = new JPanel(new BorderLayout());
+        pAvi.setBorder(BorderFactory.createTitledBorder("Avisos"));
+        pAvi.add(new JScrollPane(new JList<>(modAvisos)), BorderLayout.CENTER);
+
+        pnlListas.add(pLib);
+        pnlListas.add(pAvi);
+
+        areaTexto = new JTextArea(4, 30);
+        areaTexto.setLineWrap(true);
+        areaTexto.setWrapStyleWord(true);
+        areaTexto.setToolTipText("Notas o comentarios del usuario");
+        areaTexto.getDocument().addUndoableEditListener(undoManager);
+
+        JPanel pNotas = new JPanel(new BorderLayout());
+        pNotas.setBorder(BorderFactory.createTitledBorder("Notas / Comentarios"));
+        pNotas.add(new JScrollPane(areaTexto), BorderLayout.CENTER);
+
+        JPanel centro = new JPanel(new GridLayout(2, 1, 10, 10));
+        centro.add(pnlListas);
+        centro.add(pNotas);
+        add(centro, BorderLayout.CENTER);
+
+        btnRefrescar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 refrescarDatos();
             }
         });
 
-        btnDeshacer.addActionListener(new ActionListener() {
+        btnUndo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 deshacer();
             }
         });
 
-        btnRehacer.addActionListener(new ActionListener() {
+        btnRedo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 rehacer();
             }
         });
 
-        btnLimpiar.addActionListener(new ActionListener() {
+        InputMap im = areaTexto.getInputMap(JComponent.WHEN_FOCUSED);
+        ActionMap am = areaTexto.getActionMap();
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo");
+        am.put("undo", new AbstractAction() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                areaTexto.setText("");
-            }
+            public void actionPerformed(ActionEvent e) { deshacer(); }
         });
 
-        panelBotones.add(btnActualizar);
-        panelBotones.add(btnDeshacer);
-        panelBotones.add(btnRehacer);
-        panelBotones.add(btnLimpiar);
-        add(panelBotones, BorderLayout.NORTH);
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "redo");
+        am.put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { rehacer(); }
+        });
 
-        modeloLibros = new DefaultListModel<>();
-        modeloAvisos = new DefaultListModel<>();
-
-        JPanel panelListas = new JPanel(new GridLayout(1, 2, 10, 10));
-        JPanel pLibros = new JPanel(new BorderLayout());
-        pLibros.setBorder(BorderFactory.createTitledBorder("Libros disponibles"));
-        pLibros.add(new JScrollPane(new JList<>(modeloLibros)), BorderLayout.CENTER);
-
-        JPanel pAvisos = new JPanel(new BorderLayout());
-        pAvisos.setBorder(BorderFactory.createTitledBorder("Avisos publicados"));
-        pAvisos.add(new JScrollPane(new JList<>(modeloAvisos)), BorderLayout.CENTER);
-
-        panelListas.add(pLibros);
-        panelListas.add(pAvisos);
-
-        areaTexto = new JTextArea(4, 30);
-        areaTexto.setLineWrap(true);
-        areaTexto.setWrapStyleWord(true);
-        areaTexto.setToolTipText("Escribe aquí tus comentarios o búsqueda (Ctrl+Z deshacer, Ctrl+Y rehacer)");
-        areaTexto.getDocument().addUndoableEditListener(undoManager);
-        sp = new JScrollPane(areaTexto);
-
-        JPanel panelComentarios = new JPanel(new BorderLayout());
-        panelComentarios.setBorder(BorderFactory.createTitledBorder("Comentarios / Búsqueda del Usuario"));
-        panelComentarios.add(sp, BorderLayout.CENTER);
-
-        JPanel centro = new JPanel(new GridLayout(2, 1, 10, 10));
-        centro.add(panelListas);
-        centro.add(panelComentarios);
-        add(centro, BorderLayout.CENTER);
-
-        configurarAtajosTeclado();
         refrescarDatos();
     }
 
     public void refrescarDatos() {
-        modeloLibros.clear();
-        for (Libro l : libros) {
-            modeloLibros.addElement(l);
-        }
-        modeloAvisos.clear();
-        for (Aviso a : avisos) {
-            modeloAvisos.addElement(a);
-        }
-    }
+        modLibros.clear();
+        for (Libro l : libros) modLibros.addElement(l);
 
-    private void configurarAtajosTeclado() {
-        InputMap im = areaTexto.getInputMap(JComponent.WHEN_FOCUSED);
-        ActionMap am = areaTexto.getActionMap();
-
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "deshacer");
-        am.put("deshacer", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                deshacer();
-            }
-        });
-
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "rehacer");
-        am.put("rehacer", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                rehacer();
-            }
-        });
+        modAvisos.clear();
+        for (Aviso a : avisos) modAvisos.addElement(a);
     }
 
     public void deshacer() {
-        if (undoManager.canUndo()) {
-            undoManager.undo();
-        }
+        if (undoManager.canUndo()) undoManager.undo();
     }
 
     public void rehacer() {
-        if (undoManager.canRedo()) {
-            undoManager.redo();
-        }
+        if (undoManager.canRedo()) undoManager.redo();
     }
 
-    public void limpiarHistorial() {
-        undoManager.discardAllEdits();
-    }
-
-    public String getTexto() {
-        return areaTexto.getText();
-    }
-
-    public void setTexto(String texto) {
-        areaTexto.setText(texto);
-        undoManager.discardAllEdits();
-    }
-
-    private Icon crearIconoActualizar() {
+    private Icon iconoCirculo(final Color c) {
         return new Icon() {
             @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                g.setColor(new Color(0, 102, 204));
-                g.drawArc(x + 2, y + 2, 12, 12, 30, 300);
+            public void paintIcon(Component comp, Graphics g, int x, int y) {
+                g.setColor(c);
+                g.drawOval(x + 2, y + 2, 12, 12);
             }
-
-            @Override
-            public int getIconWidth() { return 16; }
-
-            @Override
-            public int getIconHeight() { return 16; }
+            @Override public int getIconWidth() { return 16; }
+            @Override public int getIconHeight() { return 16; }
         };
     }
 
-    private Icon crearIconoFlecha(final boolean izquierda) {
+    private Icon iconoFlecha(final boolean izq) {
         return new Icon() {
             @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
+            public void paintIcon(Component comp, Graphics g, int x, int y) {
                 g.setColor(Color.DARK_GRAY);
-                if (izquierda) {
+                if (izq) {
                     g.drawLine(x + 12, y + 8, x + 4, y + 8);
                     g.drawLine(x + 4, y + 8, x + 8, y + 4);
                     g.drawLine(x + 4, y + 8, x + 8, y + 12);
@@ -223,29 +174,8 @@ public class PanelUsuario extends JPanel {
                     g.drawLine(x + 12, y + 8, x + 8, y + 12);
                 }
             }
-
-            @Override
-            public int getIconWidth() { return 16; }
-
-            @Override
-            public int getIconHeight() { return 16; }
-        };
-    }
-
-    private Icon crearIconoLimpiar() {
-        return new Icon() {
-            @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                g.setColor(new Color(180, 40, 40));
-                g.drawLine(x + 4, y + 4, x + 12, y + 12);
-                g.drawLine(x + 12, y + 4, x + 4, y + 12);
-            }
-
-            @Override
-            public int getIconWidth() { return 16; }
-
-            @Override
-            public int getIconHeight() { return 16; }
+            @Override public int getIconWidth() { return 16; }
+            @Override public int getIconHeight() { return 16; }
         };
     }
 }

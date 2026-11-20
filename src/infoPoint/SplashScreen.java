@@ -12,70 +12,46 @@ import javax.swing.SwingConstants;
 
 public class SplashScreen extends JDialog {
 
-    private JProgressBar barraProgreso;
-    private JLabel lblMensaje;
+    private JProgressBar barra;
+    private JLabel lblEstado;
 
     public SplashScreen() {
-        // setUndecorated(true) elimina la barra de título y bordes (Requisito obligatorio)
         setUndecorated(true);
-        setSize(450, 220);
+        setSize(420, 200);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10));
 
-        JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
-        panelPrincipal.setBorder(BorderFactory.createLineBorder(new Color(0, 102, 204), 3));
-        panelPrincipal.setBackground(Color.WHITE);
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
 
-        // Título principal de la aplicación
-        JLabel lblTitulo = new JLabel("Suite Biblioteca Municipal", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("InfoPoint - Biblioteca", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
-        lblTitulo.setForeground(new Color(0, 102, 204));
 
-        // Mensaje de estado dinámico
-        lblMensaje = new JLabel("Iniciando sistema...", SwingConstants.CENTER);
-        lblMensaje.setFont(new Font("Arial", Font.PLAIN, 14));
+        lblEstado = new JLabel("Iniciando aplicación...", SwingConstants.CENTER);
 
-        // Barra de progreso real (0 a 100)
-        barraProgreso = new JProgressBar(0, 100);
-        barraProgreso.setStringPainted(true);
-        barraProgreso.setForeground(new Color(0, 102, 204));
+        barra = new JProgressBar(0, 100);
+        barra.setStringPainted(true);
 
-        JPanel panelSur = new JPanel(new BorderLayout(5, 5));
-        panelSur.setOpaque(false);
-        panelSur.add(lblMensaje, BorderLayout.NORTH);
-        panelSur.add(barraProgreso, BorderLayout.SOUTH);
+        panel.add(lblTitulo, BorderLayout.CENTER);
+        panel.add(lblEstado, BorderLayout.NORTH);
+        panel.add(barra, BorderLayout.SOUTH);
 
-        panelPrincipal.add(lblTitulo, BorderLayout.CENTER);
-        panelPrincipal.add(panelSur, BorderLayout.SOUTH);
-
-        add(panelPrincipal, BorderLayout.CENTER);
+        add(panel, BorderLayout.CENTER);
     }
 
-    // Método con hilos (Thread.sleep) para simular la carga y cambiar mensajes de estado
     public void iniciarCarga() {
         setVisible(true);
-
         for (int i = 0; i <= 100; i++) {
-            barraProgreso.setValue(i);
-
-            // Mensajes de estado cambiantes según el progreso
-            if (i == 20) {
-                lblMensaje.setText("Conectando con el servidor...");
-            } else if (i == 50) {
-                lblMensaje.setText("Cargando estilos y componentes...");
-            } else if (i == 80) {
-                lblMensaje.setText("Sincronizando datos de biblioteca...");
-            } else if (i == 95) {
-                lblMensaje.setText("¡Listo!");
-            }
-
+            barra.setValue(i);
+            if (i == 30) lblEstado.setText("Cargando módulos...");
+            if (i == 70) lblEstado.setText("Preparando datos...");
             try {
-                Thread.sleep(50); // Pausa de 30ms por cada incremento
+                Thread.sleep(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
-        dispose(); // Cierra el splash al terminar el bucle
+        dispose();
     }
 }
